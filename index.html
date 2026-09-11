@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard HPP Jamur Tiram</title>
+    <title>HPP Jamur Tiram</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
     <style>
         body { background-color: #f8fafc; font-family: sans-serif; }
-        .card { background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card { background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -17,39 +15,36 @@
         <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
                 <h2 class="text-2xl font-bold text-slate-800">Kalkulator HPP Jamur Tiram</h2>
-                <p class="text-slate-500">Versi Portable untuk Google Sites</p>
+                <p class="text-slate-500">Versi Stabil - Google Sites</p>
             </div>
             <label class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors text-sm font-medium">
-                <i data-lucide="file-up" class="w-4 h-4"></i>
-                Import CSV
+                <span style="font-size: 14px;">📁 Upload CSV</span>
                 <input type="file" id="csvInput" accept=".csv" class="hidden" />
             </label>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="card flex items-center gap-4 bg-blue-50 border-blue-100">
-                <div class="p-3 bg-blue-100 rounded-xl"><i data-lucide="wallet" class="text-blue-600"></i></div>
-                <div><p class="text-sm text-slate-500">Total Biaya</p><p id="stat-total" class="text-xl font-bold text-slate-800">Rp 0</p></div>
+            <div class="card bg-blue-50 border-blue-100 text-center">
+                <p class="text-sm text-slate-500">Total Biaya</p>
+                <p id="stat-total" class="text-xl font-bold text-slate-800">Rp 0</p>
             </div>
-            <div class="card flex items-center gap-4 bg-emerald-50 border-emerald-100">
-                <div class="p-3 bg-emerald-100 rounded-xl"><i data-lucide="trending-up" class="text-emerald-600"></i></div>
-                <div><p class="text-sm text-slate-500">HPP / Kg</p><p id="stat-hpp" class="text-xl font-bold text-slate-800">Rp 0</p></div>
+            <div class="card bg-emerald-50 border-emerald-100 text-center">
+                <p class="text-sm text-slate-500">HPP / Kg</p>
+                <p id="stat-hpp" class="text-xl font-bold text-slate-800">Rp 0</p>
             </div>
-            <div class="card flex items-center gap-4 bg-amber-50 border-amber-100">
-                <div class="p-3 bg-amber-100 rounded-xl"><i data-lucide="shopping-cart" class="text-amber-600"></i></div>
-                <div><p class="text-sm text-slate-500">Biaya / Baglog</p><p id="stat-baglog" class="text-xl font-bold text-slate-800">Rp 0</p></div>
+            <div class="card bg-amber-50 border-amber-100 text-center">
+                <p class="text-sm text-slate-500">Biaya / Baglog</p>
+                <p id="stat-baglog" class="text-xl font-bold text-slate-800">Rp 0</p>
             </div>
-            <div class="card flex items-center gap-4 bg-rose-50 border-rose-100">
-                <div class="p-3 bg-rose-100 rounded-xl"><i data-lucide="arrow-up-right" class="text-rose-600"></i></div>
-                <div><p class="text-sm text-slate-500">Saran Harga</p><p id="stat-price" class="text-xl font-bold text-slate-800">Rp 0</p></div>
+            <div class="card bg-rose-50 border-rose-100 text-center">
+                <p class="text-sm text-slate-500">Saran Harga</p>
+                <p id="stat-price" class="text-xl font-bold text-slate-800">Rp 0</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 card">
-                <h3 class="text-lg font-semibold mb-6 flex items-center gap-2 text-emerald-600">
-                    <i data-lucide="calculator"></i> Input Biaya & Produksi
-                </h3>
+                <h3 class="text-lg font-semibold mb-6 text-emerald-600">Input Biaya & Produksi</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-4">
                         <div>
@@ -86,19 +81,15 @@
                 </div>
             </div>
             <div class="card">
-                <h3 class="text-lg font-semibold mb-6 flex items-center gap-2 text-emerald-600">
-                    <i data-lucide="trending-up"></i> Komposisi Biaya
-                </h3>
-                <div id="chart" class="h-64 w-full flex items-center justify-center text-slate-400 text-sm text-center">
-                    Grafik akan muncul otomatis<br>setelah data diisi
+                <h3 class="text-lg font-semibold mb-6 text-emerald-600">Komposisi Biaya</h3>
+                <div id="chart-container" class="space-y-4">
+                    <!-- Grafik Bar akan muncul di sini -->
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const inputs = ['cost-bahan', 'cost-kerja', 'cost-ops', 'cost-inv', 'prod-baglogs', 'prod-harvest', 'prod-margin'];
-        
         function calculate() {
             const bahan = parseFloat(document.getElementById('cost-bahan').value) || 0;
             const kerja = parseFloat(document.getElementById('cost-kerja').value) || 0;
@@ -117,6 +108,34 @@
             document.getElementById('stat-hpp').innerText = 'Rp ' + Math.round(hpp).toLocaleString('id-ID');
             document.getElementById('stat-baglog').innerText = 'Rp ' + Math.round(perBaglog).toLocaleString('id-ID');
             document.getElementById('stat-price').innerText = 'Rp ' + Math.round(price).toLocaleString('id-ID');
+
+            updateBars(bahan, kerja, ops, inv, total);
+        }
+
+        function updateBars(b, k, o, i, total) {
+            const container = document.getElementById('chart-container');
+            container.innerHTML = '';
+            const data = [
+                { label: 'Bahan Baku', val: b, color: 'bg-emerald-500' },
+                { label: 'Tenaga Kerja', val: k, color: 'bg-blue-500' },
+                { label: 'Operasional', val: o, color: 'bg-amber-500' },
+                { label: 'Investasi', val: i, color: 'bg-rose-500' },
+            ];
+
+            data.forEach(item => {
+                const percent = total > 0 ? (item.val / total) * 100 : 0;
+                container.innerHTML += `
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-medium">
+                            <span>${item.label}</span>
+                            <span>${percent.toFixed(1)}%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="${item.color} h-2 rounded-full" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
         }
 
         document.getElementById('csvInput').addEventListener('change', function(e) {
@@ -127,23 +146,19 @@
                 const text = event.target.result;
                 const lines = text.split('\n');
                 let bBaku = 0, tKerja = 0, tOps = 0, tInv = 0;
-
                 const headerIndex = lines.findIndex(l => l.includes('No;Tanggal'));
                 if (headerIndex === -1) return;
-
                 lines.slice(headerIndex + 1).forEach(line => {
                     const cols = line.split(';');
                     if (cols.length < 8) return;
                     const item = cols[3]?.toLowerCase() || '';
                     const val = parseFloat(cols[7]?.replace(/Rp\s?/, '').replace(/\./g, '').replace(/,/g, '')) || 0;
                     if (val <= 0) return;
-
                     if (item.includes('gaji') || item.includes('karyawan')) tKerja += val;
                     else if (item.includes('perbaikan') || item.includes('investasi') || item.includes('kumbung')) tInv += val;
                     else if (item.includes('racun') || item.includes('listrik') || item.includes('air')) tOps += val;
                     else bBaku += val;
                 });
-
                 document.getElementById('cost-bahan').value = bBaku;
                 document.getElementById('cost-kerja').value = tKerja;
                 document.getElementById('cost-ops').value = tOps;
@@ -153,9 +168,11 @@
             reader.readAsText(file);
         });
 
-        inputs.forEach(id => document.getElementById(id).addEventListener('input', calculate));
-        lucide.createIcons();
-        calculate();
+        ['cost-bahan', 'cost-kerja', 'cost-ops', 'cost-inv', 'prod-baglogs', 'prod-harvest', 'prod-margin'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculate);
+        });
+
+        window.onload = calculate;
     </script>
 </body>
 </html>
