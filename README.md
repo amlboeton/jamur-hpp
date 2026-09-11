@@ -1,1 +1,1 @@
-Dashbord ssytem for mushrooms production cost management
+Dashboard ssytem for mushrooms production cost management
