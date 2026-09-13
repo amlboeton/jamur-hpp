@@ -90,55 +90,77 @@
     </div>
 
     <script>
+        const refs = {
+            total: document.getElementById('stat-total'),
+            hpp: document.getElementById('stat-hpp'),
+            baglog: document.getElementById('stat-baglog'),
+            price: document.getElementById('stat-price'),
+            chartContainer: document.getElementById('chart-container'),
+            csvInput: document.getElementById('csvInput'),
+            inputs: {
+                bahan: document.getElementById('cost-bahan'),
+                kerja: document.getElementById('cost-kerja'),
+                ops: document.getElementById('cost-ops'),
+                inv: document.getElementById('cost-inv'),
+                baglogs: document.getElementById('prod-baglogs'),
+                harvest: document.getElementById('prod-harvest'),
+                margin: document.getElementById('prod-margin')
+            }
+        };
+
+        const currencyFormatter = new Intl.NumberFormat('id-ID');
+
         function calculate() {
-            const bahan = parseFloat(document.getElementById('cost-bahan').value) || 0;
-            const kerja = parseFloat(document.getElementById('cost-kerja').value) || 0;
-            const ops = parseFloat(document.getElementById('cost-ops').value) || 0;
-            const inv = parseFloat(document.getElementById('cost-inv').value) || 0;
-            const baglogs = parseFloat(document.getElementById('prod-baglogs').value) || 0;
-            const harvest = parseFloat(document.getElementById('prod-harvest').value) || 0;
-            const margin = parseFloat(document.getElementById('prod-margin').value) || 0;
+            const bahan = parseFloat(refs.inputs.bahan.value) || 0;
+            const kerja = parseFloat(refs.inputs.kerja.value) || 0;
+            const ops = parseFloat(refs.inputs.ops.value) || 0;
+            const inv = parseFloat(refs.inputs.inv.value) || 0;
+            const baglogs = parseFloat(refs.inputs.baglogs.value) || 0;
+            const harvest = parseFloat(refs.inputs.harvest.value) || 0;
+            const margin = parseFloat(refs.inputs.margin.value) || 0;
 
             const total = bahan + kerja + ops + inv;
             const hpp = harvest > 0 ? total / harvest : 0;
             const price = hpp * (1 + (margin / 100));
             const perBaglog = baglogs > 0 ? total / baglogs : 0;
 
-            document.getElementById('stat-total').innerText = 'Rp ' + total.toLocaleString('id-ID');
-            document.getElementById('stat-hpp').innerText = 'Rp ' + Math.round(hpp).toLocaleString('id-ID');
-            document.getElementById('stat-baglog').innerText = 'Rp ' + Math.round(perBaglog).toLocaleString('id-ID');
-            document.getElementById('stat-price').innerText = 'Rp ' + Math.round(price).toLocaleString('id-ID');
+            refs.total.textContent = 'Rp ' + currencyFormatter.format(total);
+            refs.hpp.textContent = 'Rp ' + currencyFormatter.format(Math.round(hpp));
+            refs.baglog.textContent = 'Rp ' + currencyFormatter.format(Math.round(perBaglog));
+            refs.price.textContent = 'Rp ' + currencyFormatter.format(Math.round(price));
 
-            updateBars(bahan, kerja, ops, inv, total);
+            updateBars({ bahan, kerja, ops, inv, total });
         }
 
-        function updateBars(b, k, o, i, total) {
-            const container = document.getElementById('chart-container');
-            container.innerHTML = '';
+        function updateBars({ bahan, kerja, ops, inv, total }) {
+            const fragment = document.createDocumentFragment();
             const data = [
-                { label: 'Bahan Baku', val: b, color: 'bg-emerald-500' },
-                { label: 'Tenaga Kerja', val: k, color: 'bg-blue-500' },
-                { label: 'Operasional', val: o, color: 'bg-amber-500' },
-                { label: 'Investasi', val: i, color: 'bg-rose-500' },
+                { label: 'Bahan Baku', val: bahan, color: 'bg-emerald-500' },
+                { label: 'Tenaga Kerja', val: kerja, color: 'bg-blue-500' },
+                { label: 'Operasional', val: ops, color: 'bg-amber-500' },
+                { label: 'Investasi', val: inv, color: 'bg-rose-500' },
             ];
 
             data.forEach(item => {
                 const percent = total > 0 ? (item.val / total) * 100 : 0;
-                container.innerHTML += `
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-xs font-medium">
-                            <span>${item.label}</span>
-                            <span>${percent.toFixed(1)}%</span>
-                        </div>
-                        <div class="w-full bg-slate-200 rounded-full h-2">
-                            <div class="${item.color} h-2 rounded-full" style="width: ${percent}%"></div>
-                        </div>
+                const row = document.createElement('div');
+                row.className = 'space-y-1';
+                row.innerHTML = `
+                    <div class="flex justify-between text-xs font-medium">
+                        <span>${item.label}</span>
+                        <span>${percent.toFixed(1)}%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2">
+                        <div class="${item.color} h-2 rounded-full" style="width: ${percent}%"></div>
                     </div>
                 `;
+                fragment.appendChild(row);
             });
+
+            refs.chartContainer.replaceChildren(fragment);
         }
 
-        document.getElementById('csvInput').addEventListener('change', function(e) {
+        refs.csvInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -159,20 +181,20 @@
                     else if (item.includes('racun') || item.includes('listrik') || item.includes('air')) tOps += val;
                     else bBaku += val;
                 });
-                document.getElementById('cost-bahan').value = bBaku;
-                document.getElementById('cost-kerja').value = tKerja;
-                document.getElementById('cost-ops').value = tOps;
-                document.getElementById('cost-inv').value = tInv;
+                refs.inputs.bahan.value = bBaku;
+                refs.inputs.kerja.value = tKerja;
+                refs.inputs.ops.value = tOps;
+                refs.inputs.inv.value = tInv;
                 calculate();
             };
             reader.readAsText(file);
         });
 
-        ['cost-bahan', 'cost-kerja', 'cost-ops', 'cost-inv', 'prod-baglogs', 'prod-harvest', 'prod-margin'].forEach(id => {
-            document.getElementById(id).addEventListener('input', calculate);
+        Object.keys(refs.inputs).forEach(id => {
+            refs.inputs[id].addEventListener('input', calculate);
         });
 
-        window.onload = calculate;
+        window.addEventListener('load', calculate);
     </script>
 </body>
 </html>
