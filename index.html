@@ -90,31 +90,61 @@
     </div>
 
     <script>
+        const formatCurrency = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
+        const costInputs = {
+            bahan: document.getElementById('cost-bahan'),
+            kerja: document.getElementById('cost-kerja'),
+            ops: document.getElementById('cost-ops'),
+            inv: document.getElementById('cost-inv'),
+            baglogs: document.getElementById('prod-baglogs'),
+            harvest: document.getElementById('prod-harvest'),
+            margin: document.getElementById('prod-margin')
+        };
+        const statEls = {
+            total: document.getElementById('stat-total'),
+            hpp: document.getElementById('stat-hpp'),
+            baglog: document.getElementById('stat-baglog'),
+            price: document.getElementById('stat-price')
+        };
+        const chartContainer = document.getElementById('chart-container');
+        let renderQueued = false;
+
+        function formatMoney(value) {
+            return 'Rp ' + formatCurrency.format(Math.round(value));
+        }
+
+        function scheduleCalculate() {
+            if (renderQueued) return;
+            renderQueued = true;
+            requestAnimationFrame(() => {
+                renderQueued = false;
+                calculate();
+            });
+        }
+
         function calculate() {
-            const bahan = parseFloat(document.getElementById('cost-bahan').value) || 0;
-            const kerja = parseFloat(document.getElementById('cost-kerja').value) || 0;
-            const ops = parseFloat(document.getElementById('cost-ops').value) || 0;
-            const inv = parseFloat(document.getElementById('cost-inv').value) || 0;
-            const baglogs = parseFloat(document.getElementById('prod-baglogs').value) || 0;
-            const harvest = parseFloat(document.getElementById('prod-harvest').value) || 0;
-            const margin = parseFloat(document.getElementById('prod-margin').value) || 0;
+            const bahan = parseFloat(costInputs.bahan.value) || 0;
+            const kerja = parseFloat(costInputs.kerja.value) || 0;
+            const ops = parseFloat(costInputs.ops.value) || 0;
+            const inv = parseFloat(costInputs.inv.value) || 0;
+            const baglogs = parseFloat(costInputs.baglogs.value) || 0;
+            const harvest = parseFloat(costInputs.harvest.value) || 0;
+            const margin = parseFloat(costInputs.margin.value) || 0;
 
             const total = bahan + kerja + ops + inv;
             const hpp = harvest > 0 ? total / harvest : 0;
             const price = hpp * (1 + (margin / 100));
             const perBaglog = baglogs > 0 ? total / baglogs : 0;
 
-            document.getElementById('stat-total').innerText = 'Rp ' + total.toLocaleString('id-ID');
-            document.getElementById('stat-hpp').innerText = 'Rp ' + Math.round(hpp).toLocaleString('id-ID');
-            document.getElementById('stat-baglog').innerText = 'Rp ' + Math.round(perBaglog).toLocaleString('id-ID');
-            document.getElementById('stat-price').innerText = 'Rp ' + Math.round(price).toLocaleString('id-ID');
+            statEls.total.textContent = formatMoney(total);
+            statEls.hpp.textContent = formatMoney(hpp);
+            statEls.baglog.textContent = formatMoney(perBaglog);
+            statEls.price.textContent = formatMoney(price);
 
             updateBars(bahan, kerja, ops, inv, total);
         }
 
         function updateBars(b, k, o, i, total) {
-            const container = document.getElementById('chart-container');
-            container.innerHTML = '';
             const data = [
                 { label: 'Bahan Baku', val: b, color: 'bg-emerald-500' },
                 { label: 'Tenaga Kerja', val: k, color: 'bg-blue-500' },
@@ -122,20 +152,24 @@
                 { label: 'Investasi', val: i, color: 'bg-rose-500' },
             ];
 
+            const fragment = document.createDocumentFragment();
             data.forEach(item => {
                 const percent = total > 0 ? (item.val / total) * 100 : 0;
-                container.innerHTML += `
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-xs font-medium">
-                            <span>${item.label}</span>
-                            <span>${percent.toFixed(1)}%</span>
-                        </div>
-                        <div class="w-full bg-slate-200 rounded-full h-2">
-                            <div class="${item.color} h-2 rounded-full" style="width: ${percent}%"></div>
-                        </div>
+                const row = document.createElement('div');
+                row.className = 'space-y-1';
+                row.innerHTML = `
+                    <div class="flex justify-between text-xs font-medium">
+                        <span>${item.label}</span>
+                        <span>${percent.toFixed(1)}%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2">
+                        <div class="${item.color} h-2 rounded-full" style="width: ${percent}%"></div>
                     </div>
                 `;
+                fragment.appendChild(row);
             });
+
+            chartContainer.replaceChildren(fragment);
         }
 
         document.getElementById('csvInput').addEventListener('change', function(e) {
@@ -159,17 +193,17 @@
                     else if (item.includes('racun') || item.includes('listrik') || item.includes('air')) tOps += val;
                     else bBaku += val;
                 });
-                document.getElementById('cost-bahan').value = bBaku;
-                document.getElementById('cost-kerja').value = tKerja;
-                document.getElementById('cost-ops').value = tOps;
-                document.getElementById('cost-inv').value = tInv;
+                costInputs.bahan.value = bBaku;
+                costInputs.kerja.value = tKerja;
+                costInputs.ops.value = tOps;
+                costInputs.inv.value = tInv;
                 calculate();
             };
             reader.readAsText(file);
         });
 
-        ['cost-bahan', 'cost-kerja', 'cost-ops', 'cost-inv', 'prod-baglogs', 'prod-harvest', 'prod-margin'].forEach(id => {
-            document.getElementById(id).addEventListener('input', calculate);
+        Object.values(costInputs).forEach(input => {
+            input.addEventListener('input', scheduleCalculate);
         });
 
         window.onload = calculate;
